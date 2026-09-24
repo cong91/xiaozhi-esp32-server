@@ -14,6 +14,18 @@ const functionDialogSource = await readFile(
   new URL('../src/components/FunctionDialog.vue', import.meta.url),
   'utf8',
 );
+const customTableSource = await readFile(
+  new URL('../src/components/CustomTable.vue', import.meta.url),
+  'utf8',
+);
+const httpRequestSource = await readFile(
+  new URL('../src/apis/httpRequest.js', import.meta.url),
+  'utf8',
+);
+const i18nIndexSource = await readFile(
+  new URL('../src/i18n/index.js', import.meta.url),
+  'utf8',
+);
 
 test('address-book permission state consistently uses the target device MAC', () => {
   assert.match(
@@ -77,4 +89,40 @@ test('function dialog footer stays above the expanding MCP tools section', () =>
   assert.ok(mcpLayer, 'MCP section should define its stacking layer');
   assert.ok(footerLayer, 'drawer footer should define its stacking layer');
   assert.ok(Number(footerLayer[1]) > Number(mcpLayer[1]));
+});
+
+test('browser locale detection is not persisted as explicit user choice', () => {
+  assert.doesNotMatch(i18nIndexSource, /persistLanguage\(resolved/);
+});
+
+test('shared table defaults use translated labels', () => {
+  assert.match(customTableSource, /:label="resolvedSelectLabel"/);
+  assert.match(customTableSource, /resolvedOperationsLabel\(\) \{/);
+  assert.match(customTableSource, /this\.\$i18n \? this\.\$t\('common\.operation'\) : 'Actions'/);
+  assert.match(customTableSource, /this\.\$i18n \? this\.\$t\('common\.loading'\) : 'Loading'/);
+  assert.doesNotMatch(customTableSource, /default: 'Loading'/);
+});
+
+test('shared components keep standalone English fallbacks without i18n injection', () => {
+  assert.match(customTableSource, /this\.\$i18n \? this\.\$t\('common\.select'\) : 'Select'/);
+  assert.match(customTableSource, /this\.\$i18n \? this\.\$t\('common\.operation'\) : 'Actions'/);
+  assert.match(customTableSource, /this\.\$i18n \? this\.\$t\('common\.loading'\) : 'Loading'/);
+  assert.match(customTableSource, /default: ''/);
+});
+
+test('http transport toasts go through i18n instead of Chinese literals', () => {
+  assert.match(httpRequestSource, /i18n\.t\('common\.networkRequestError'/);
+  assert.match(httpRequestSource, /i18n\.t\('common\.cannotConnectServer'\)/);
+  assert.match(httpRequestSource, /i18n\.t\('common\.connectingServer'/);
+  assert.doesNotMatch(httpRequestSource, /似乎无法连接服务器/);
+  assert.doesNotMatch(httpRequestSource, /正在连接服务器/);
+  assert.doesNotMatch(httpRequestSource, /网络请求出现了错误/);
+});
+
+test('vue-i18n falls back to English and merges app catalogs last', () => {
+  assert.match(i18nIndexSource, /fallbackLocale:\s*'en'/);
+  assert.match(i18nIndexSource, /mergeLocaleMessages\(enLocale, en\)/);
+  assert.match(i18nIndexSource, /mergeLocaleMessages\(viLocale, vi\)/);
+  assert.doesNotMatch(i18nIndexSource, /fallbackLocale:\s*'zh_CN'/);
+  assert.doesNotMatch(i18nIndexSource, /\.\.\.en,\s*\.\.\.enLocale/);
 });

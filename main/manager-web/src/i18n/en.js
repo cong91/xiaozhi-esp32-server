@@ -711,7 +711,14 @@ export default {
   'common.loading': 'Loading',
   'common.copySuccess': 'Copy successful',
   'common.copyFailed': 'Copy failed',
+  'common.copyFailedManual': 'Copy failed, please copy manually',
   'common.copyAddress': 'Copy address',
+  'common.confirmSave': 'Confirm save',
+  'common.select': 'Select',
+  'common.operation': 'Actions',
+  'common.networkRequestError': 'Network request error [{status}]',
+  'common.cannotConnectServer': 'Unable to connect to the server',
+  'common.connectingServer': 'Connecting to the server ({index})',
 
   // Language switch
   'language.zhCN': '中文简体',

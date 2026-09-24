@@ -711,7 +711,14 @@ export default {
   'common.loading': '載入中',
   'common.copySuccess': '複製成功',
   'common.copyFailed': '複製失敗',
+  'common.copyFailedManual': '複製失敗，請手動複製',
   'common.copyAddress': '複製地址',
+  'common.confirmSave': '確認儲存',
+  'common.select': '選擇',
+  'common.operation': '操作',
+  'common.networkRequestError': '網路請求出現了錯誤【{status}】',
+  'common.cannotConnectServer': '似乎無法連線伺服器',
+  'common.connectingServer': '正在連線伺服器({index})',
 
   // 語言切換
   'language.zhCN': '中文简体',

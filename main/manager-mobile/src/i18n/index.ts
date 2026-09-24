@@ -1,17 +1,16 @@
 import type { Language } from '@/store/lang'
 import { ref } from 'vue'
 import { useLangStore } from '@/store/lang'
-
 import de from './de'
+
 import en from './en'
+import { DEFAULT_LOCALE, interpolate, isSupportedLocale } from './locale'
 import pt_BR from './pt_BR'
 import vi from './vi'
-// 导入各个语言的翻译文件
 import zh_CN from './zh_CN'
 import zh_TW from './zh_TW'
 
-// 语言包映射
-const messages = {
+const messages: Record<Language, Record<string, string>> = {
   zh_CN,
   en,
   zh_TW,
@@ -20,53 +19,39 @@ const messages = {
   pt_BR,
 }
 
-// 当前使用的语言
-const currentLang = ref<Language>('zh_CN')
+const currentLang = ref<Language>(DEFAULT_LOCALE)
 
-// 初始化语言
 export function initI18n() {
   const langStore = useLangStore()
   currentLang.value = langStore.currentLang
 }
 
-// 切换语言
 export function changeLanguage(lang: Language) {
-  currentLang.value = lang
+  const next = isSupportedLocale(lang) ? lang : DEFAULT_LOCALE
+  currentLang.value = next
   const langStore = useLangStore()
-  langStore.changeLang(lang)
+  langStore.changeLang(next)
 }
 
-// 获取翻译文本
+function lookup(lang: Language, key: string): string | undefined {
+  const pack = messages[lang]
+  const value = pack?.[key]
+  return typeof value === 'string' ? value : undefined
+}
+
 export function t(key: string, params?: Record<string, string | number>): string {
-  const langMessages = messages[currentLang.value]
-
-  // 直接查找扁平键名
-  if (langMessages && typeof langMessages === 'object' && key in langMessages) {
-    const value = langMessages[key]
-    if (typeof value === 'string') {
-      // 处理参数替换
-      if (params) {
-        let result = value
-        Object.entries(params).forEach(([paramKey, paramValue]) => {
-          const regex = new RegExp(`\{${paramKey}\}`, 'g')
-          result = result.replace(regex, String(paramValue))
-        })
-        return result
-      }
-      return value
-    }
-    return key
-  }
-
-  return key // 如果找不到对应的翻译，返回key本身
+  const value
+    = lookup(currentLang.value, key)
+      ?? lookup('en', key)
+      ?? lookup('zh_CN', key)
+      ?? key
+  return interpolate(value, params)
 }
 
-// 获取当前语言
 export function getCurrentLanguage(): Language {
   return currentLang.value
 }
 
-// 获取支持的语言列表
 export function getSupportedLanguages(): { code: Language, name: string }[] {
   return [
     { code: 'zh_CN', name: '简体中文' },
