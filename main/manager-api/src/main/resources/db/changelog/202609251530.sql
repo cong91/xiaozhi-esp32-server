@@ -4,6 +4,15 @@
 -- human-readable remarks, and tts_language sync so voice-language filtering keeps working.
 -- Runtime values (API keys, URLs, model IDs, voice codes, prompts, lang_code) are unchanged.
 
+-- Widen display columns first: translated labels are longer than the
+-- original Chinese ones and ai_tts_voice.name is only VARCHAR(20).
+ALTER TABLE `ai_tts_voice`
+    MODIFY COLUMN `name` VARCHAR(100) COMMENT 'Voice name',
+    MODIFY COLUMN `languages` VARCHAR(100) COMMENT 'Languages';
+
+ALTER TABLE `sys_params`
+    MODIFY COLUMN `remark` VARCHAR(500) COMMENT 'Remark';
+
 UPDATE `ai_model_provider`
 SET
     `name` = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(`name`, '仅上报聊天记录', 'Report Chat History Only'), '本地短记忆', 'Local Short-Term Memory'), '语音活动检测', 'Voice Activity Detection'), '语音识别', 'Speech Recognition'), '语音合成', 'Text-to-Speech'), '函数调用', 'Function Calling'), '意图识别', 'Intent Recognition'), '大模型', 'Large Language Model'), '小模型', 'Small Model'), '通义千问', 'Qwen'), '通义百炼', 'DashScope'), '火山引擎', 'Volcengine'), '阿里云', 'Alibaba Cloud'), '腾讯', 'Tencent'), '讯飞', 'iFlytek'), '豆包', 'Doubao'), '硅基流动', 'SiliconFlow'), '无记忆', 'No Memory'), '记忆', 'Memory'),
