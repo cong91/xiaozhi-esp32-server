@@ -7,7 +7,7 @@
         :class="['custom-table', tableClass]"
         height="100%"
         v-loading="loading"
-        :element-loading-text="loadingText"
+        :element-loading-text="resolvedLoadingText"
         :element-loading-spinner="loadingSpinner"
         :element-loading-background="loadingBackground"
         :header-cell-class-name="headerCellClassName"
@@ -20,7 +20,7 @@
           v-if="showSelection"
           width="55"
           align="center"
-          label="选择"
+          :label="resolvedSelectLabel"
         >
           <template slot-scope="scope">
             <slot
@@ -67,7 +67,7 @@
         <!-- 操作列 -->
         <el-table-column
           v-if="showOperations"
-          :label="operationsLabel"
+          :label="resolvedOperationsLabel"
           align="center"
           :width="operationsWidth"
         >
@@ -125,7 +125,7 @@ export default {
     },
     operationsLabel: {
       type: String,
-      default: '操作'
+      default: ''
     },
     operationsWidth: {
       type: [String, Number],
@@ -159,7 +159,7 @@ export default {
     },
     loadingText: {
       type: String,
-      default: 'Loading'
+      default: ''
     },
     loadingSpinner: {
       type: String,
@@ -186,6 +186,15 @@ export default {
   computed: {
     tableContainerHeight() {
       return this.showPagination ? 'calc(100% - 48px)' : '100%';
+    },
+    resolvedOperationsLabel() {
+      return this.operationsLabel || (this.$i18n ? this.$t('common.operation') : 'Actions');
+    },
+    resolvedLoadingText() {
+      return this.loadingText || (this.$i18n ? this.$t('common.loading') : 'Loading');
+    },
+    resolvedSelectLabel() {
+      return this.$i18n ? this.$t('common.select') : 'Select';
     }
   },
   methods: {

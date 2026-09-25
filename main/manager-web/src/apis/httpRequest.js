@@ -141,7 +141,7 @@ function httpHandlerError(info, failCallback, networkFailCallback) {
     if (networkFailCallback) {
         networkFailCallback(info)
     } else {
-        showDanger(`网络请求出现了错误【${info.status}】`)
+        showDanger(i18n.t('common.networkRequestError', { status: info.status }))
     }
     return true
 }
@@ -156,9 +156,9 @@ function reAjaxFun(fn) {
     }
     let ajaxIndex = parseInt((nowTimeSec - requestTime) / reAjaxSec)
     if (ajaxIndex > 10) {
-        showWarning('似乎无法连接服务器')
+        showWarning(i18n.t('common.cannotConnectServer'))
     } else {
-        showWarning('正在连接服务器(' + ajaxIndex + ')')
+        showWarning(i18n.t('common.connectingServer', { index: ajaxIndex }))
     }
     if (ajaxIndex < 10 && fn) {
         setTimeout(() => {

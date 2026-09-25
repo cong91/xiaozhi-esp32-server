@@ -711,7 +711,14 @@ export default {
   'common.loading': 'Đang tải',
   'common.copySuccess': 'Sao chép thành công',
   'common.copyFailed': 'Sao chép thất bại',
+  'common.copyFailedManual': 'Sao chép thất bại, hãy sao chép thủ công',
   'common.copyAddress': 'Sao chép địa chỉ',
+  'common.confirmSave': 'Xác nhận lưu',
+  'common.select': 'Chọn',
+  'common.operation': 'Thao tác',
+  'common.networkRequestError': 'Lỗi yêu cầu mạng [{status}]',
+  'common.cannotConnectServer': 'Không thể kết nối máy chủ',
+  'common.connectingServer': 'Đang kết nối máy chủ ({index})',
 
   // Language switch
   'language.zhCN': '中文简体',

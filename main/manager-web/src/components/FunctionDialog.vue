@@ -317,7 +317,7 @@ export default {
           this.$message.error(this.$t('functionDialog.copyFailed'));
         }
       } catch (err) {
-        this.$message.error('复制失败，请手动复制');
+        this.$message.error(this.$t('common.copyFailedManual'));
         console.error('复制失败:', err);
       } finally {
         document.body.removeChild(textarea);

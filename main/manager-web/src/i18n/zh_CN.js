@@ -711,7 +711,14 @@ export default {
   'common.loading': '加载中',
   'common.copySuccess': '复制成功',
   'common.copyFailed': '复制失败',
+  'common.copyFailedManual': '复制失败，请手动复制',
   'common.copyAddress': '复制地址',
+  'common.confirmSave': '确认保存',
+  'common.select': '选择',
+  'common.operation': '操作',
+  'common.networkRequestError': '网络请求出现了错误【{status}】',
+  'common.cannotConnectServer': '似乎无法连接服务器',
+  'common.connectingServer': '正在连接服务器({index})',
 
   // 语言切换
   'language.zhCN': '中文简体',

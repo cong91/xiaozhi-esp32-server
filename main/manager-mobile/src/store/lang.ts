@@ -1,9 +1,10 @@
 import type { Ref } from 'vue'
+import type { SupportedLocale } from '@/i18n/locale'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { getSystemLanguage, LANGUAGE_STORAGE_KEY, resolveLanguage } from '@/i18n/locale'
 
-// 支持的语言类型
-export type Language = 'zh_CN' | 'en' | 'zh_TW' | 'de' | 'vi' | 'pt_BR'
+export type Language = SupportedLocale
 
 export interface LangStore {
   currentLang: Ref<Language>
@@ -13,15 +14,13 @@ export interface LangStore {
 export const useLangStore = defineStore(
   'lang',
   (): LangStore => {
-    // 从本地存储获取语言设置，如果没有则使用默认值
-    const savedLang = uni.getStorageSync('app_language') as Language | null
-    const currentLang = ref<Language>(savedLang || 'zh_CN')
+    const savedLang = uni.getStorageSync(LANGUAGE_STORAGE_KEY)
+    const currentLang = ref<Language>(resolveLanguage(savedLang, getSystemLanguage()))
 
-    // 切换语言
     const changeLang = (lang: Language) => {
-      currentLang.value = lang
-      // 将语言设置保存到本地存储
-      uni.setStorageSync('app_language', lang)
+      const next = resolveLanguage(lang, getSystemLanguage())
+      currentLang.value = next
+      uni.setStorageSync(LANGUAGE_STORAGE_KEY, next)
     }
 
     return {
@@ -34,7 +33,14 @@ export const useLangStore = defineStore(
       key: 'lang',
       serializer: {
         serialize: state => JSON.stringify(state.currentLang),
-        deserialize: value => ({ currentLang: JSON.parse(value) }),
+        deserialize: (value) => {
+          try {
+            return { currentLang: resolveLanguage(JSON.parse(value), getSystemLanguage()) }
+          }
+          catch {
+            return { currentLang: resolveLanguage(undefined, getSystemLanguage()) }
+          }
+        },
       },
     },
   },
