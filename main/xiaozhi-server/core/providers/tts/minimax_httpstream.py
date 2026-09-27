@@ -44,15 +44,24 @@ class TTSProvider(TTSProviderBase):
             "format": "pcm",
             "channel": 1,
         }
+        voice_setting = config.get("voice_setting")
+        if not isinstance(voice_setting, dict):
+            voice_setting = {}
         self.voice_setting = {
             **default_voice_setting,
-            **config.get("voice_setting", {}),
+            **voice_setting,
         }
+        pronunciation_dict = config.get("pronunciation_dict")
+        if not isinstance(pronunciation_dict, dict):
+            pronunciation_dict = {}
         self.pronunciation_dict = {
             **default_pronunciation_dict,
-            **config.get("pronunciation_dict", {}),
+            **pronunciation_dict,
         }
-        self.audio_setting = {**defult_audio_setting, **config.get("audio_setting", {})}
+        audio_setting = config.get("audio_setting")
+        if not isinstance(audio_setting, dict):
+            audio_setting = {}
+        self.audio_setting = {**defult_audio_setting, **audio_setting}
         self.timber_weights = parse_string_to_list(config.get("timber_weights"))
 
         if self.voice:
@@ -74,8 +83,15 @@ class TTSProvider(TTSProviderBase):
                 config["ttsPitch"], min_val=-12, max_val=12, base_val=0
             ))
 
-        self.host = "api.minimaxi.com"  # 备用地址：api-bj.minimaxi.com
-        self.api_url = f"https://{self.host}/v1/t2a_v2?GroupId={self.group_id}"
+        # 国内平台默认 api.minimaxi.com；国际平台(platform.minimax.io)在配置中传 host: api.minimax.io
+        # host 配置为空字符串时也回退到默认值，避免拼出 https:///v1/t2a_v2
+        self.host = config.get("host") or "api.minimaxi.com"
+        # 新版订阅密钥(sk-cp)可不传 GroupId，仅在配置了 group_id 时拼接
+        self.api_url = f"https://{self.host}/v1/t2a_v2"
+        if self.group_id:
+            self.api_url += f"?GroupId={self.group_id}"
+        # 多语种增强参数，如 auto；不配置则不下发
+        self.language_boost = config.get("language_boost")
         self.header = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
@@ -183,6 +199,8 @@ class TTSProvider(TTSProviderBase):
             "pronunciation_dict": self.pronunciation_dict,
             "audio_setting": self.audio_setting,
         }
+        if self.language_boost:
+            payload["language_boost"] = self.language_boost
 
         if type(self.timber_weights) is list and len(self.timber_weights) > 0:
             payload["timber_weights"] = self.timber_weights
@@ -312,6 +330,8 @@ class TTSProvider(TTSProviderBase):
             "pronunciation_dict": self.pronunciation_dict,
             "audio_setting": self.audio_setting,
         }
+        if self.language_boost:
+            payload["language_boost"] = self.language_boost
 
         if type(self.timber_weights) is list and len(self.timber_weights) > 0:
             payload["timber_weights"] = self.timber_weights
