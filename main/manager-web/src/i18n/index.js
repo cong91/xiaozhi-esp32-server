@@ -47,4 +47,7 @@ export default i18n;
 
 export const changeLanguage = (lang) => {
   i18n.locale = persistLanguage(lang, getLanguageStorage());
+  if (Vue.prototype.$eventBus) {
+    Vue.prototype.$eventBus.$emit('languageChanged', i18n.locale);
+  }
 };

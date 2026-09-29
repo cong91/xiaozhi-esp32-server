@@ -26,6 +26,10 @@ const i18nIndexSource = await readFile(
   new URL('../src/i18n/index.js', import.meta.url),
   'utf8',
 );
+const mobileRequestSource = await readFile(
+  new URL('../../manager-mobile/src/http/request/alova.ts', import.meta.url),
+  'utf8',
+);
 
 test('address-book permission state consistently uses the target device MAC', () => {
   assert.match(
@@ -117,6 +121,20 @@ test('http transport toasts go through i18n instead of Chinese literals', () => 
   assert.doesNotMatch(httpRequestSource, /似乎无法连接服务器/);
   assert.doesNotMatch(httpRequestSource, /正在连接服务器/);
   assert.doesNotMatch(httpRequestSource, /网络请求出现了错误/);
+});
+
+test('language changes preserve the shared event contract', () => {
+  assert.match(i18nIndexSource, /\$eventBus\.\$emit\('languageChanged', i18n\.locale\)/);
+});
+
+test('language changes preserve the shared event contract', () => {
+  assert.match(i18nIndexSource, /\$eventBus\.\$emit\('languageChanged', i18n\.locale\)/);
+});
+
+test('mobile HTTP status recovery uses the active locale', () => {
+  assert.match(mobileRequestSource, /ShowMessage\(statusCode, t\)/);
+  assert.match(mobileRequestSource, /getCurrentLanguage\(\)/);
+  assert.doesNotMatch(mobileRequestSource, /HTTP请求错误/);
 });
 
 test('vue-i18n falls back to English and merges app catalogs last', () => {

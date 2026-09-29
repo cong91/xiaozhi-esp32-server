@@ -1138,6 +1138,11 @@ export default {
   'modelConfigDialog.callInfo': 'Call Information',
   'modelConfigDialog.enterJsonExample': 'Please enter JSON format variables (example:{"key":"value"})',
   'modelConfigDialog.save': 'Save',
+  'modelConfigDialog.syncVoices': 'Sync Voices',
+  'modelConfigDialog.syncVoicesSuccess': 'Voices synced successfully',
+  'modelConfigDialog.syncVoicesFailed': 'Failed to sync voices',
+  'modelConfigDialog.catalogLoadFailed': 'Failed to load option list',
+  'modelConfigDialog.saveFirstToLoadOptions': 'Save the model first to load options',
 
   // TTS Model Configuration Text
   'ttsModel.select': 'Select',

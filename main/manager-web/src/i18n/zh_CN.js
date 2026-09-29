@@ -1138,6 +1138,11 @@ export default {
   'modelConfigDialog.callInfo': '调用信息',
   'modelConfigDialog.enterJsonExample': '请输入JSON格式变量(示例:{"key":"value"})',
   'modelConfigDialog.save': '保存',
+  'modelConfigDialog.syncVoices': '同步音色',
+  'modelConfigDialog.syncVoicesSuccess': '音色同步成功',
+  'modelConfigDialog.syncVoicesFailed': '音色同步失败',
+  'modelConfigDialog.catalogLoadFailed': '加载选项列表失败',
+  'modelConfigDialog.saveFirstToLoadOptions': '请先保存模型后再加载选项',
 
   // TTS模型配置文本
   'ttsModel.select': '选择',

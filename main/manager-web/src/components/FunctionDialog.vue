@@ -436,12 +436,15 @@ export default {
 
       let selected = this.selectedList.map(f => {
         const modified = this.modifiedFunctions[f.name];
+        // 合并两处可能的编辑：v-model 直接改动落在 f.params 上，
+        // @change 记录落在 modifiedFunctions 上；任一来源有值都不得丢失
+        const params = modified
+          ? { ...f.params, ...modified.params }
+          : { ...f.params };
         return {
           id: f.id,
           name: f.name,
-          params: modified
-            ? { ...modified.params }
-            : { ...f.params }
+          params
         }
       });
 

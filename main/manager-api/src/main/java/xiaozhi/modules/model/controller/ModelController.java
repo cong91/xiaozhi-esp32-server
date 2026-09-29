@@ -21,6 +21,7 @@ import xiaozhi.common.utils.ConvertUtils;
 import xiaozhi.common.utils.Result;
 import xiaozhi.modules.agent.service.AgentTemplateService;
 import xiaozhi.modules.config.service.ConfigService;
+import xiaozhi.modules.model.catalog.CatalogItem;
 import xiaozhi.modules.model.dto.LlmModelBasicInfoDTO;
 import xiaozhi.modules.model.dto.ModelBasicInfoDTO;
 import xiaozhi.modules.model.dto.ModelConfigBodyDTO;
@@ -28,6 +29,7 @@ import xiaozhi.modules.model.dto.ModelConfigDTO;
 import xiaozhi.modules.model.dto.ModelProviderDTO;
 import xiaozhi.modules.model.dto.VoiceDTO;
 import xiaozhi.modules.model.entity.ModelConfigEntity;
+import xiaozhi.modules.model.service.CatalogService;
 import xiaozhi.modules.model.service.ModelConfigService;
 import xiaozhi.modules.model.service.ModelProviderService;
 import xiaozhi.modules.timbre.service.TimbreService;
@@ -43,6 +45,7 @@ public class ModelController {
     private final ModelConfigService modelConfigService;
     private final ConfigService configService;
     private final AgentTemplateService agentTemplateService;
+    private final CatalogService catalogService;
 
     @GetMapping("/names")
     @Operation(summary = "获取所有模型名称")
@@ -170,5 +173,22 @@ public class ModelController {
             @RequestParam(required = false) String voiceName) {
         List<VoiceDTO> voiceList = timbreService.getVoiceNames(modelId, voiceName);
         return new Result<List<VoiceDTO>>().ok(voiceList);
+    }
+
+    @GetMapping("/{modelId}/catalog/{kind}")
+    @Operation(summary = "获取模型目录")
+    @RequiresPermissions("sys:role:superAdmin")
+    public Result<List<CatalogItem>> getModelCatalog(@PathVariable String modelId,
+            @PathVariable String kind) {
+        List<CatalogItem> catalog = catalogService.getCatalog(modelId, kind);
+        return new Result<List<CatalogItem>>().ok(catalog);
+    }
+
+    @PostMapping("/{modelId}/voices/sync")
+    @Operation(summary = "从提供商同步音色")
+    @RequiresPermissions("sys:role:superAdmin")
+    public Result<Integer> syncVoicesFromProvider(@PathVariable String modelId) {
+        int count = catalogService.syncVoices(modelId);
+        return new Result<Integer>().ok(count);
     }
 }

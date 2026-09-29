@@ -217,6 +217,73 @@ export default {
     }
     request.send();
   },
+  // 获取模型目录选项（音色、模型等，kind 由字段定义的 dynamic 指定）
+  getModelCatalog(modelId, kind, success, fail, retryCount = 0, retryStartedAt = 0) {
+    const retryWindowStartedAt = retryStartedAt || Date.now();
+    const request = RequestService.sendRequest()
+      .url(`${getServiceUrl()}/models/${modelId}/catalog/${kind}`)
+      .method('GET')
+      .success((res) => {
+        RequestService.clearRequestTime();
+        success(res);
+      })
+      .networkFail((error) => {
+        retryCallbackRequest(
+          (nextRetryCount, nextRetryStartedAt) => this.getModelCatalog(
+            modelId,
+            kind,
+            success,
+            fail,
+            nextRetryCount,
+            nextRetryStartedAt
+          ),
+          retryCount,
+          fail,
+          error,
+          retryWindowStartedAt
+        );
+      });
+    if (fail) {
+      request.fail((error) => {
+        RequestService.clearRequestTime();
+        fail(error);
+      });
+    }
+    request.send();
+  },
+  // 同步模型音色目录（从提供商接口重新拉取）
+  syncModelVoices(modelId, success, fail, retryCount = 0, retryStartedAt = 0) {
+    const retryWindowStartedAt = retryStartedAt || Date.now();
+    const request = RequestService.sendRequest()
+      .url(`${getServiceUrl()}/models/${modelId}/voices/sync`)
+      .method('POST')
+      .success((res) => {
+        RequestService.clearRequestTime();
+        success(res);
+      })
+      .networkFail((error) => {
+        retryCallbackRequest(
+          (nextRetryCount, nextRetryStartedAt) => this.syncModelVoices(
+            modelId,
+            success,
+            fail,
+            nextRetryCount,
+            nextRetryStartedAt
+          ),
+          retryCount,
+          fail,
+          error,
+          retryWindowStartedAt
+        );
+      });
+    if (fail) {
+      request.fail((error) => {
+        RequestService.clearRequestTime();
+        fail(error);
+      });
+    }
+    request.send();
+  },
   // 获取单个模型配置
   getModelConfig(id, callback) {
     RequestService.sendRequest()

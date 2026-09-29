@@ -81,6 +81,17 @@
                   "></el-input>
             </template>
 
+            <div v-else-if="isSelectField(field)" class="select-field-row">
+              <el-select v-model="form.configJson[field.prop]" class="select-field-control" filterable
+                :disabled="isSelectDisabled(field)" :placeholder="selectPlaceholder(field)">
+                <el-option v-for="opt in selectOptions(field)" :key="opt.value" :label="opt.label"
+                  :value="opt.value" />
+              </el-select>
+              <el-button v-if="field.dynamic === 'voices' && form.id" class="sync-voices-btn" size="mini"
+                icon="el-icon-refresh" :loading="syncingVoices" :title="$t('modelConfigDialog.syncVoices')"
+                @click="handleSyncVoices(field)"></el-button>
+            </div>
+
             <el-input v-else v-model="form.configJson[field.prop]" :placeholder="field.placeholder" :type="field.type"
               :show-password="field.type === 'password'" @focus="
                 isSensitiveField(field.prop)
@@ -124,6 +135,9 @@ export default {
       pendingModelData: null,
       dynamicCallInfoFields: [],
       fieldJsonMap: {}, // 用于存储JSON字段的字符串形式
+      dynamicOptions: {}, // 动态目录选项，按字段prop存储（如音色、模型列表）
+      dynamicLoadFailed: {}, // 动态目录加载失败的字段prop集合
+      syncingVoices: false, // 音色目录同步进行中
       sensitive_keys: [
         "api_key",
         "personal_access_token",
@@ -182,6 +196,8 @@ export default {
   },
   methods: {
     handleOpen() {
+      this.dynamicOptions = {};
+      this.dynamicLoadFailed = {};
       this.loadProviders();
       if (this.modelData.id) {
         this.loadModelData();
@@ -208,6 +224,9 @@ export default {
         configJson: {},
       };
       this.fieldJsonMap = {};
+      this.dynamicOptions = {};
+      this.dynamicLoadFailed = {};
+      this.syncingVoices = false;
     },
     resetProviders() {
       this.providers = [];
@@ -315,15 +334,105 @@ export default {
                   ? "password"
                   : "text",
             placeholder: `请输入${f.key}`,
+            options: f.options,
+            dynamic: f.dynamic || null,
           }));
+
+          // 字段集变更后旧目录选项失效，清空并按需重新加载
+          this.dynamicOptions = {};
+          this.dynamicLoadFailed = {};
 
           if (this.pendingModelData && this.pendingProviderType === providerCode) {
             this.processModelData(this.pendingModelData);
             this.pendingModelData = null;
             this.pendingProviderType = null;
           }
+
+          this.loadDynamicCatalogs();
         }
       }
+    },
+    // 字段是否渲染为下拉框：携带静态options或dynamic目录
+    isSelectField(field) {
+      return Array.isArray(field.options) || !!field.dynamic;
+    },
+    // 下拉框选项：静态options直接使用，dynamic从后端目录读取
+    selectOptions(field) {
+      if (Array.isArray(field.options)) {
+        return field.options;
+      }
+      if (field.dynamic) {
+        return this.dynamicOptions[field.prop] || [];
+      }
+      return [];
+    },
+    // 动态下拉框禁用条件：新建模型无ID无法加载目录，或目录加载失败
+    isSelectDisabled(field) {
+      if (!field.dynamic) {
+        return false;
+      }
+      return !this.form.id || !!this.dynamicLoadFailed[field.prop];
+    },
+    // 新建模型的动态下拉框提示先保存
+    selectPlaceholder(field) {
+      if (field.dynamic && !this.form.id) {
+        return this.$t('modelConfigDialog.saveFirstToLoadOptions');
+      }
+      return field.placeholder;
+    },
+    loadDynamicCatalogs() {
+      this.dynamicCallInfoFields.forEach((field) => {
+        if (field.dynamic && this.form.id) {
+          this.loadFieldCatalog(field);
+        }
+      });
+    },
+    loadFieldCatalog(field) {
+      Api.model.getModelCatalog(
+        this.form.id,
+        field.dynamic,
+        ({ data }) => {
+          // 字段集已变更（切换供应器或重新打开），丢弃过期响应
+          if (!this.dynamicCallInfoFields.includes(field)) {
+            return;
+          }
+          if (data.code === 0 && Array.isArray(data.data)) {
+            this.$set(this.dynamicOptions, field.prop, data.data);
+            this.$delete(this.dynamicLoadFailed, field.prop);
+          } else {
+            this.$set(this.dynamicLoadFailed, field.prop, true);
+            this.$message.error(this.$t('modelConfigDialog.catalogLoadFailed'));
+          }
+        },
+        () => {
+          if (!this.dynamicCallInfoFields.includes(field)) {
+            return;
+          }
+          this.$set(this.dynamicLoadFailed, field.prop, true);
+          this.$message.error(this.$t('modelConfigDialog.catalogLoadFailed'));
+        }
+      );
+    },
+    // 同步音色目录后重新加载该字段选项
+    handleSyncVoices(field) {
+      if (this.syncingVoices || !this.form.id) {
+        return;
+      }
+      this.syncingVoices = true;
+      Api.model.syncModelVoices(
+        this.form.id,
+        () => {
+          this.syncingVoices = false;
+          this.$message.success(this.$t('modelConfigDialog.syncVoicesSuccess'));
+          this.loadFieldCatalog(field);
+        },
+        (err) => {
+          this.syncingVoices = false;
+          this.$message.error(
+            (err && err.data && err.data.msg) || this.$t('modelConfigDialog.syncVoicesFailed')
+          );
+        }
+      );
     },
     processModelData(model) {
       let configJson = model.configJson || {};
@@ -518,6 +627,21 @@ export default {
     display: flex;
     gap: 20px;
     margin-bottom: 0;
+  }
+
+  .select-field-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .select-field-control {
+      flex: 1;
+    }
+
+    .sync-voices-btn {
+      flex-shrink: 0;
+      padding: 7px 8px;
+    }
   }
 
   ::v-deep .el-input__inner {

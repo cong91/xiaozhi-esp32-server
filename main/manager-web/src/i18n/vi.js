@@ -1138,6 +1138,11 @@ export default {
   'modelConfigDialog.callInfo': 'Thông tin gọi',
   'modelConfigDialog.enterJsonExample': 'Vui lòng nhập biến định dạng JSON (ví dụ:{\"key\":\"value\"})',
   'modelConfigDialog.save': 'Lưu',
+  'modelConfigDialog.syncVoices': 'Đồng bộ giọng nói',
+  'modelConfigDialog.syncVoicesSuccess': 'Đồng bộ giọng nói thành công',
+  'modelConfigDialog.syncVoicesFailed': 'Đồng bộ giọng nói thất bại',
+  'modelConfigDialog.catalogLoadFailed': 'Tải danh sách lựa chọn thất bại',
+  'modelConfigDialog.saveFirstToLoadOptions': 'Lưu mô hình trước để tải lựa chọn',
 
   // TTS Model Configuration Text
   'ttsModel.select': 'Chọn',
