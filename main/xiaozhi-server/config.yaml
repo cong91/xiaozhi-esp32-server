@@ -524,6 +524,18 @@ ASR:
     base_url: https://api.groq.com/openai/v1/audio/transcriptions
     model_name: whisper-large-v3-turbo
     output_dir: tmp/
+  ElevenlabsASR:
+    # ElevenLabs Scribe语音识别服务，支持90+种语言（含越南语）
+    # 申请步骤：
+    # 1.登录ElevenLabs。https://elevenlabs.io
+    # 2.创建api-key（sk_开头）。https://elevenlabs.io/app/settings/api-keys
+    # 3.模型可以选择scribe_v2或scribe_v2_realtime（本配置为非流式，用scribe_v2）
+    type: elevenlabs
+    api_key: 你的ElevenLabs API密钥
+    base_url: https://api.elevenlabs.io/v1/speech-to-text
+    model_name: scribe_v2
+    output_dir: tmp/
+    # language: "Vietnamese"  # 指定识别语种（ISO-639-1码），不填则API自动检测
   VoskASR:
     # 官方网站：https://alphacephei.com/vosk/
     # 配置说明：
@@ -896,6 +908,23 @@ TTS:
     speed: 1
     output_dir: tmp/
     # language: "中文"  # 指定输出语种,如:中文、英语、日语、韩语等,请根据所选音色支持的语言进行设置,不填则默认为中文
+  ElevenlabsTTS:
+    # ElevenLabs语音合成服务，支持越南语等32+种语言，音质优秀
+    # 申请步骤：
+    # 1.登录ElevenLabs。https://elevenlabs.io
+    # 2.创建api-key（sk_开头）。https://elevenlabs.io/app/settings/api-keys
+    # 3.音色voice_id可以在Voice Library选择，或用GET https://api.elevenlabs.io/v1/voices查询
+    # 4.模型eleven_flash_v2_5支持越南语且延迟最低；eleven_v3更有情感；multilingual_v2不含越南语
+    type: elevenlabs
+    api_key: 你的ElevenLabs API密钥
+    voice: 你的ElevenLabs voice_id
+    output_dir: tmp/
+    format: mp3
+    # model: eleven_flash_v2_5  # 支持32种语言（含越南语）
+    # language: "Vietnamese"  # 指定输出语种可提升发音准确度；multilingual_v2不支持此参数
+    # stability: 0.5  # 稳定性0~1，越低情感起伏越大
+    # similarity_boost: 0.75  # 音色相似度0~1
+    # speed: 1.0  # 语速0.7~1.2
   FishSpeech:
     # 参照教程：https://github.com/xinnan-tech/xiaozhi-esp32-server/blob/main/docs/fish-speech-integration.md
     type: fishspeech
