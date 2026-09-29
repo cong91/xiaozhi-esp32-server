@@ -1,4 +1,6 @@
 import os
+import base64
+import time
 from typing import Optional, Tuple, List
 import dashscope
 from config.logger import setup_logging
@@ -51,69 +53,83 @@ class ASRProvider(ASRProviderBase):
         self, opus_data: List[bytes], session_id: str, artifacts=None
     ) -> Tuple[Optional[str], Optional[str]]:
         """将语音数据转换为文本"""
-        temp_file_path = None
         file_path = None
         try:
             if artifacts is None:
                 return "", None
-            temp_file_path = artifacts.temp_path
             file_path = artifacts.file_path
+            temp_file_path = artifacts.temp_path
             if not temp_file_path:
                 return "", file_path
-            # 构造请求消息
+
+            # 以 base64 data URI 内联音频：传本地路径会触发 SDK 的 OSS 上传
+            # （先向 /uploads 取证书，workspace 域名下偶发
+            # "Get upload certificate failed"），内联后无此依赖也少一次上传往返
+            with open(temp_file_path, "rb") as audio_file:
+                audio_b64 = base64.b64encode(audio_file.read()).decode()
             messages = [
                 {
                     "role": "user",
                     "content": [
-                        {"audio": temp_file_path}
+                        {"audio": f"data:audio/wav;base64,{audio_b64}"}
                     ]
                 }
             ]
-            
+
             # 如果有上下文信息，添加system消息
             if self.context:
                 messages.insert(0, {
-                    "role": "system", 
+                    "role": "system",
                     "content": [
                         {"text": self.context}
                     ]
                 })
-            
+
             # 准备ASR选项
             asr_options = {
                 "enable_lid": self.enable_lid,
                 "enable_itn": self.enable_itn
             }
-            
+
             # 归一化失败则不传语种，保持自动检测（enable_lid）
             language = normalize_language(self.language)
             if language:
                 asr_options["language"] = language
-            
+
             # 设置API密钥
             dashscope.api_key = self.api_key
-            
-            # 发送流式请求
-            response = dashscope.MultiModalConversation.call(
-                model=self.model_name,
-                messages=messages,
-                result_format="message",
-                asr_options=asr_options,
-                stream=True
-            )
-            
-            # 处理流式响应
+
+            # 发送流式请求，网关偶发抖动时重试一次
             full_text = ""
-            for chunk in response:
+            for attempt in range(2):
+                full_text = ""
                 try:
-                    text = chunk["output"]["choices"][0]["message"].content[0]["text"]
-                    # 更新为最新的完整文本
-                    full_text = text.strip()
-                except:
-                    pass
-            
+                    response = dashscope.MultiModalConversation.call(
+                        model=self.model_name,
+                        messages=messages,
+                        result_format="message",
+                        asr_options=asr_options,
+                        stream=True
+                    )
+
+                    # 处理流式响应，取最后一个完整文本
+                    for chunk in response:
+                        try:
+                            text = chunk["output"]["choices"][0]["message"].content[0]["text"]
+                            full_text = text.strip()
+                        except Exception:
+                            pass
+                    return full_text, file_path
+                except Exception as e:
+                    logger.bind(tag=tag).warning(
+                        f"语音识别失败(第{attempt + 1}次尝试): {e}"
+                    )
+                    if attempt == 0:
+                        time.sleep(0.5)
+                    else:
+                        raise
             return full_text, file_path
-                
+
         except Exception as e:
             logger.bind(tag=tag).error(f"语音识别失败: {e}")
             return "", file_path
