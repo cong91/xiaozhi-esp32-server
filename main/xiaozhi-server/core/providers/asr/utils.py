@@ -25,6 +25,51 @@ EMOTION_EMOJI_MAP = {
 #     "<|Cough|>": "🤧",
 # }
 
+# 各API通用的语言别名表：TTS配置里的语言名（Vietnamese/普通话/zh_CN…）
+# 统一归一化成 ISO-639-1 码，供需要语言参数的 ASR 提供方使用
+LANGUAGE_ALIASES = {
+    "vi": "vi", "vie": "vi", "vietnamese": "vi", "tiếng việt": "vi", "tieng viet": "vi",
+    "zh": "zh", "zh-cn": "zh", "zh_cn": "zh", "cmn": "zh", "zh-hans": "zh", "zh-hant": "zh",
+    "chinese": "zh", "mandarin": "zh", "普通话": "zh", "中文": "zh",
+    "yue": "yue", "cantonese": "yue", "粤语": "yue",
+    "en": "en", "eng": "en", "english": "en", "tiếng anh": "en",
+    "ja": "ja", "japanese": "ja", "日语": "ja",
+    "ko": "ko", "korean": "ko", "韩语": "ko",
+    "fr": "fr", "french": "fr",
+    "de": "de", "german": "de",
+    "es": "es", "spanish": "es",
+    "ru": "ru", "russian": "ru",
+    "th": "th", "thai": "th",
+    "id": "id", "indonesian": "id",
+    "ms": "ms", "malay": "ms",
+    "pt": "pt", "portuguese": "pt",
+    "hi": "hi", "hindi": "hi",
+    "ar": "ar", "arabic": "ar",
+}
+
+
+def normalize_language(value) -> str | None:
+    """
+    把语言配置值归一化为 ISO-639-1 码，无法识别时返回 None。
+
+    无法识别就不发送语言参数，让 API 回退到自动检测，避免发出非法值导致整个请求 400。
+    >>> normalize_language("Vietnamese")
+    'vi'
+    >>> normalize_language("zh_CN")
+    'zh'
+    >>> normalize_language("auto") is None
+    True
+    """
+    if not value:
+        return None
+    v = str(value).strip().lower().replace("_", "-")
+    if v in LANGUAGE_ALIASES:
+        return LANGUAGE_ALIASES[v]
+    base = v.split("-")[0]
+    if len(base) in (2, 3) and base.isalpha():
+        return base
+    return None
+
 def lang_tag_filter(text: str) -> dict:
     """
     解析 FunASR 识别结果，按顺序提取标签和纯文本内容

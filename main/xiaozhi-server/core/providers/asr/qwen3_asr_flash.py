@@ -4,6 +4,7 @@ import dashscope
 from config.logger import setup_logging
 from core.providers.asr.base import ASRProviderBase
 from core.providers.asr.dto.dto import InterfaceType
+from core.providers.asr.utils import normalize_language
 
 tag = __name__
 logger = setup_logging()
@@ -20,6 +21,12 @@ class ASRProvider(ASRProviderBase):
         self.api_key = config.get("api_key")
         if not self.api_key:
             raise ValueError("Qwen3-ASR-Flash 需要配置 api_key")
+
+        # 可选：自定义 DashScope 服务地址（如新加坡 workspace 专用域名）
+        # 不配置时使用 SDK 默认值 https://dashscope.aliyuncs.com/api/v1
+        self.base_url = config.get("base_url")
+        if self.base_url:
+            dashscope.base_http_api_url = self.base_url
             
         self.model_name = config.get("model_name", "qwen3-asr-flash")
         self.output_dir = config.get("output_dir", "./audio_output")
@@ -78,9 +85,10 @@ class ASRProvider(ASRProviderBase):
                 "enable_itn": self.enable_itn
             }
             
-            # 如果指定了语种，添加到选项中
-            if self.language:
-                asr_options["language"] = self.language
+            # 归一化失败则不传语种，保持自动检测（enable_lid）
+            language = normalize_language(self.language)
+            if language:
+                asr_options["language"] = language
             
             # 设置API密钥
             dashscope.api_key = self.api_key

@@ -4,6 +4,7 @@ from config.logger import setup_logging
 from typing import Optional, Tuple, List
 from core.providers.asr.dto.dto import InterfaceType
 from core.providers.asr.base import ASRProviderBase
+from core.providers.asr.utils import normalize_language
 
 import requests
 
@@ -15,8 +16,11 @@ class ASRProvider(ASRProviderBase):
         self.interface_type = InterfaceType.NON_STREAM
         self.api_key = config.get("api_key")
         self.api_url = config.get("base_url")
-        self.model = config.get("model_name")        
+        self.model = config.get("model_name")
         self.output_dir = config.get("output_dir")
+        # 识别语言（ISO-639-1 码）；不设置时 API 自动检测，
+        # 但短句/噪声下越南语等常被误判成中文，建议显式指定
+        self.language = config.get("language")
         self.delete_audio_file = delete_audio_file
 
         os.makedirs(self.output_dir, exist_ok=True)
@@ -40,6 +44,10 @@ class ASRProvider(ASRProviderBase):
             data = {
                 "model": self.model
             }
+            # 归一化失败则不传语言参数，回退到API自动检测
+            language = normalize_language(self.language)
+            if language:
+                data["language"] = language
 
 
             with open(file_path, "rb") as audio_file:  # 使用with语句确保文件关闭

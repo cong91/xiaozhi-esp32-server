@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from config.logger import setup_logging
 from core.utils import tts, llm, intent, memory, vad, asr
+from core.providers.asr.utils import normalize_language
 
 TAG = __name__
 logger = setup_logging()
@@ -117,14 +118,22 @@ def initialize_tts(config):
 
 def initialize_asr(config):
     select_asr_module = config["selected_module"]["ASR"]
+    asr_config = config["ASR"][select_asr_module].copy()
+    # ASR未显式配置语言时跟随TTS语言，避免自动检测把短句漂移成其他语言；
+    # 显式写 "auto"（或归一化失败的值）则跳过，保持各提供方默认行为
+    if not asr_config.get("language"):
+        tts_config = config.get("TTS", {}).get(config["selected_module"].get("TTS")) or {}
+        language = normalize_language(tts_config.get("language"))
+        if language:
+            asr_config["language"] = language
     asr_type = (
         select_asr_module
-        if "type" not in config["ASR"][select_asr_module]
-        else config["ASR"][select_asr_module]["type"]
+        if "type" not in asr_config
+        else asr_config["type"]
     )
     new_asr = asr.create_instance(
         asr_type,
-        config["ASR"][select_asr_module],
+        asr_config,
         str(config.get("delete_audio", True)).lower() in ("true", "1", "yes"),
     )
     logger.bind(tag=TAG).info("ASR模块初始化完成")
