@@ -56,7 +56,7 @@ you should respond with the following format:
 {{
     "name": "handle_exit_intent",
     "arguments": {{
-        "say_goodbye": "再见，祝您生活愉快！"
+        "say_goodbye": "<goodbye in the configured language>"
     }}
 }}
 </tool_call>

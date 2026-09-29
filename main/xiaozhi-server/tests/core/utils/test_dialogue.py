@@ -46,7 +46,18 @@ def test_dialogue_get_llm_dialogue_includes_user_and_assistant():
     assert {"role": "assistant", "content": "hello"} in msgs
 
 
-def test_dialogue_update_system_message_replaces_existing():
+def test_dialogue_get_llm_dialogue_includes_configured_language_reminder():
+    d = Dialogue({
+        "selected_module": {"TTS": "TTS_Test"},
+        "TTS": {"TTS_Test": {"language": "Vietnamese"}},
+    })
+    d.update_system_message("You are a helpful assistant")
+    system = next(m for m in d.get_llm_dialogue() if m["role"] == "system")
+    assert "Vietnamese" in system["content"]
+    assert "Do not switch to another language" in system["content"]
+
+
+
     d = Dialogue()
     d.update_system_message("you are a helper")
     d.update_system_message("you are a coder")

@@ -126,18 +126,14 @@ async def no_voice_close_connect(conn: "ConnectionHandler", have_voice):
                 return
             prompt = end_prompt.get("prompt")
             if not prompt:
-                prompt = "请你以```时间过得真快```未来头，用富有感情、依依不舍的话来结束这场对话吧。！"
+                prompt = "<conversation timeout; say a brief warm goodbye in the configured language>"
             await startToChat(conn, prompt)
 
 
 async def max_out_size(conn: "ConnectionHandler"):
-    # 播放超出最大输出字数的提示
+    # 让模型按当前配置语言生成输出限制提示
     conn.client_abort = False
-    text = "不好意思，我现在有点事情要忙，明天这个时候我们再聊，约好了哦！明天不见不散，拜拜！"
-    await send_stt_message(conn, text)
-    file_path = "config/assets/max_output_size.wav"
-    opus_packets = await audio_to_data(file_path)
-    conn.tts.tts_audio_queue.put((SentenceType.LAST, opus_packets, text))
+    await startToChat(conn, "<output limit reached; explain briefly in the configured language and end politely>")
     conn.close_after_chat = True
 
 

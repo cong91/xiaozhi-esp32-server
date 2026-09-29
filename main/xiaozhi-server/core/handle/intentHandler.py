@@ -179,7 +179,7 @@ async def process_intent_result(
                 except Exception as e:
                     conn.logger.bind(tag=TAG).error(f"工具调用失败: {e}")
                     result = ActionResponse(
-                        action=Action.ERROR, result="工具调用超时，请一会再试下哈", response="工具调用超时，请一会再试下哈"
+                        action=Action.ERROR, result="工具调用超时或执行失败", response="工具调用超时或执行失败"
                     )
 
                 # 上报工具调用结果
@@ -189,7 +189,7 @@ async def process_intent_result(
                     if result.action == Action.RESPONSE:  # 直接回复前端
                         text = result.response
                         if text is not None:
-                            speak_txt(conn, text)
+                            speak_txt(conn, text, localize=True)
                     elif result.action == Action.REQLLM:  # 调用函数后再请求llm生成回复
                         text = result.result
                         conn.dialogue.put(Message(role="tool", content=text))
@@ -211,7 +211,7 @@ async def process_intent_result(
                     ):
                         text = result.response if result.response else result.result
                         if text is not None:
-                            speak_txt(conn, text)
+                            speak_txt(conn, text, localize=True)
                     elif function_name != "play_music":
                         # For backward compatibility with original code
                         # 获取当前最新的文本索引
@@ -219,7 +219,7 @@ async def process_intent_result(
                         if text is None:
                             text = result.result
                         if text is not None:
-                            speak_txt(conn, text)
+                            speak_txt(conn, text, localize=True)
 
             # 将函数执行放在线程池中
             conn.executor.submit(process_function_call)
@@ -230,7 +230,12 @@ async def process_intent_result(
         return False
 
 
-def speak_txt(conn: "ConnectionHandler", text):
+def speak_txt(conn: "ConnectionHandler", text, localize=False):
+    if localize:
+        text = conn.localize_spoken_text(text)
+        if not text:
+            return
+
     # 记录文本到 sentence_id 映射
     conn.tts.store_tts_text(conn.sentence_id, text)
 

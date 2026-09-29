@@ -105,9 +105,8 @@ class ListenTextMessageHandler(TextMessageHandler):
                     conn.client_is_speaking = False
                 elif is_wakeup_words:
                     conn.just_woken_up = True
-                    # 上报纯文字数据（复用ASR上报功能，但不提供音频数据）
-                    enqueue_asr_report(conn, "嘿，你好呀", [])
-                    await startToChat(conn, "嘿，你好呀")
+                    # 让模型按当前配置语言生成唤醒回复，不把固定中文句子写入上下文
+                    await startToChat(conn, "<wake word detected; greet the user briefly>")
                 else:
                     conn.just_woken_up = True
                     # 上报纯文字数据（复用ASR上报功能，但不提供音频数据）

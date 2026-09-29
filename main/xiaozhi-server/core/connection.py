@@ -31,6 +31,7 @@ from core.handle.reportHandle import report, enqueue_tool_report
 from core.providers.tts.default import DefaultTTS
 from concurrent.futures import ThreadPoolExecutor
 from core.utils.dialogue import Message, Dialogue
+from core.utils.conversation_language import language_reminder
 from core.providers.asr.dto.dto import InterfaceType
 from core.handle.textHandle import handleTextMessage
 from core.providers.tools.unified_tool_handler import UnifiedToolHandler
@@ -163,7 +164,7 @@ class ConnectionHandler:
         self.system_introduced_speakers = set()  # 已在 system 注入过身份的说话人，控制 system 身份只首轮出现
 
         # llm相关变量
-        self.dialogue = Dialogue()
+        self.dialogue = Dialogue(self.config)
 
         # tts相关变量
         self.sentence_id = None
@@ -671,11 +672,7 @@ class ConnectionHandler:
             self.logger.bind(tag=TAG).debug("系统提示词已增强更新")
 
     def _inject_tool_call_fewshot(self):
-        """注入工具调用 few-shot 示例到对话历史。
-        结构：正样本（工具调用示例）放在动态 system 之前，可命中前缀缓存；
-        负样本（直接回答示例）放在动态 system 之后、紧挨真实用户消息，
-        确保模型在处理用户消息前最后看到的是"不调工具"的行为模式。
-        """
+        """注入工具调用 few-shot 示例到对话历史。"""
         if self.intent_type != "function_call":
             return
         if not hasattr(self, "func_handler") or self.func_handler is None:
@@ -687,45 +684,43 @@ class ConnectionHandler:
 
         tool_names = {t.get("function", {}).get("name") for t in tools}
 
-        # === few-shot 示例（is_temporary）===
-        # 展示 direct_answer 携带 response 参数的用法，一次调用完成回复
-
-        # 示例1：direct_answer（回复内容写在 response 参数里，无需递归）
+        # 使用中性占位示例，避免把中文自然语言示例教给模型。
         da_tc_id = "fewshot_da_001"
-        self.dialogue.put(Message(role="user", content="给我讲个故事吧", is_temporary=True))
+        self.dialogue.put(Message(role="user", content="<user asks for a story>", is_temporary=True))
         self.dialogue.put(Message(
             role="assistant",
             tool_calls=[{
                 "id": da_tc_id,
-                "function": {"arguments": '{"response": "好呀，你想听什么类型的呀？童话、冒险还是搞笑的？选一个我给你开讲~"}', "name": "direct_answer"},
+                "function": {"arguments": '{"response": "<short response in the configured language>"}', "name": "direct_answer"},
                 "type": "function", "index": 0,
             }],
             is_temporary=True,
         ))
         self.dialogue.put(Message(
             role="tool", tool_call_id=da_tc_id,
-            content="已直接回复", is_temporary=True,
+            content="direct answer handled",
+            is_temporary=True,
         ))
 
-        # 示例2：真实工具调用（handle_exit_intent）
         if "handle_exit_intent" in tool_names:
             tc_id = "fewshot_exit_001"
-            self.dialogue.put(Message(role="user", content="拜拜", is_temporary=True))
+            self.dialogue.put(Message(role="user", content="<user says goodbye>", is_temporary=True))
             self.dialogue.put(Message(
                 role="assistant",
                 tool_calls=[{
                     "id": tc_id,
-                    "function": {"arguments": '{"say_goodbye": "再见，下次再聊~"}', "name": "handle_exit_intent"},
+                    "function": {"arguments": '{"say_goodbye": "<goodbye in the configured language>"}', "name": "handle_exit_intent"},
                     "type": "function", "index": 0,
                 }],
                 is_temporary=True,
             ))
             self.dialogue.put(Message(
                 role="tool", tool_call_id=tc_id,
-                content="退出意图已处理", is_temporary=True,
+                content="exit intent handled",
+                is_temporary=True,
             ))
             self.dialogue.put(Message(
-                role="assistant", content="再见，下次再聊~", is_temporary=True,
+                role="assistant", content="<goodbye in the configured language>", is_temporary=True,
             ))
 
         self.logger.bind(tag=TAG).debug("已注入工具调用 few-shot 示例")
@@ -1052,6 +1047,33 @@ class ConnectionHandler:
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 
+    def localize_spoken_text(self, text: str) -> str | None:
+        """Translate system/tool text to the configured language before TTS."""
+        if not text or not self.llm:
+            return None
+        try:
+            translated = self.llm.response_no_stream(
+                system_prompt=language_reminder(self.config),
+                user_prompt=(
+                    "Translate this system or tool response into the configured language. "
+                    "Return only the translated response. Do not translate names, numbers, "
+                    f"URLs, or technical identifiers:\n{text}"
+                ),
+            )
+            return translated.strip() if translated and translated.strip() else None
+        except Exception as e:
+            self.logger.bind(tag=TAG).warning(f"系统提示语本地化失败，已跳过播报: {e}")
+            return None
+
+    def speak_system_text(self, text: str):
+        """Send a localized system/tool response."""
+        localized = self.localize_spoken_text(text)
+        if not localized:
+            return
+        self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=localized)
+        self.tts.store_tts_text(self.sentence_id, localized)
+        self.dialogue.put(Message(role="assistant", content=localized))
+
     def chat(self, query, depth=0):
         # 保存当前任务的sentence_id到局部变量，避免被新任务覆盖
         current_sentence_id = None
@@ -1361,7 +1383,7 @@ class ConnectionHandler:
                         )
                         # 超时时返回错误响应，避免整个流程卡死
                         tool_results.append((
-                            ActionResponse(action=Action.ERROR, result="哎呀，网络遇到点问题，请稍后再试下！"),
+                            ActionResponse(action=Action.ERROR, result="tool execution failed", response="tool execution failed"),
                             tool_call_data
                         ))
                         # 上报工具调用错误
@@ -1410,9 +1432,7 @@ class ConnectionHandler:
                         f"Skipping duplicate TTS for tool {tool_call_data['name']}, already streamed"
                     )
                 else:
-                    self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
-                    self.tts.store_tts_text(self.sentence_id, text)
-                self.dialogue.put(Message(role="assistant", content=text))
+                    self.speak_system_text(text)
             elif result.action == Action.REQLLM:
                 need_llm_tools.append((result, tool_call_data))
             elif result.action == Action.RECORD:

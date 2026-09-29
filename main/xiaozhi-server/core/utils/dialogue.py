@@ -3,6 +3,8 @@ import re
 from typing import List, Dict
 from datetime import datetime
 
+from core.utils.conversation_language import language_reminder
+
 
 class Message:
     def __init__(
@@ -23,7 +25,8 @@ class Message:
 
 
 class Dialogue:
-    def __init__(self):
+    def __init__(self, config: Dict = None):
+        self.config = config or {}
         self.dialogue: List[Message] = []
         # 获取当前时间
         self.current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -145,6 +148,8 @@ class Dialogue:
             except:
                 pass
 
+            # 将输出语言约束放在每次请求的 system message 末尾，覆盖递归调用和工具结果
+            full_prompt = f"{full_prompt}\n\n{language_reminder(self.config)}"
             dialogue.append({"role": "system", "content": full_prompt})
 
         # 第二段：few-shot 示例（会话内不变）
