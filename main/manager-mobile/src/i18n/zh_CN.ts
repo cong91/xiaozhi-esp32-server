@@ -338,6 +338,7 @@ export default {
   'common.pleaseSelect': '请选择',
   'common.unknownError': '未知错误',
   'common.networkError': '网络错误',
+  'message.httpStatusError': '请求失败（{status}），请检查网络或联系管理员',
 
   // SM2加密相关错误消息
   'sm2.publicKeyNotConfigured': 'SM2公钥未配置，请联系管理员',

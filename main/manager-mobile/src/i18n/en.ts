@@ -450,6 +450,7 @@ export default {
   'message.unbindSuccess': 'Unbinding successful',
   'message.unbindFail': 'Unbinding failed',
   'message.networkError': 'Network error, please check your connection',
+  'message.httpStatusError': 'Request failed ({status}), please check your connection or contact the administrator',
   'message.serverError': 'Server error, please try again later',
   'message.invalidAddress': 'The address may be invalid. Please check if the server is started or if the network connection is normal; It is also possible that requests cannot be sent due to HTTPS protocol issues',
   'message.languageChanged': 'Language changed',

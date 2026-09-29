@@ -450,6 +450,7 @@ export default {
   'message.unbindSuccess': '解除綁定成功',
   'message.unbindFail': '解除綁定失敗',
   'message.networkError': '網絡錯誤，請檢查網絡連接',
+  'message.httpStatusError': '請求失敗（{status}），請檢查網絡或聯繫管理員',
   'message.serverError': '服務器錯誤，請稍後再試',
   'message.invalidAddress': '地址可能無效，請檢查服務端是否啟動或網絡連接是否正常； 也可能因HTTPS協定問題導致無法發送請求常',
   'message.languageChanged': '語言已切換',

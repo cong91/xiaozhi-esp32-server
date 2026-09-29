@@ -450,6 +450,7 @@ export default {
   'message.unbindSuccess': 'Desvinculação realizada com sucesso',
   'message.unbindFail': 'Falha na desvinculação',
   'message.networkError': 'Erro de rede, por favor verifique sua conexão',
+  'message.httpStatusError': 'Falha na requisição ({status}), verifique sua conexão ou contate o administrador',
   'message.serverError': 'Erro no servidor, por favor tente novamente mais tarde',
   'message.invalidAddress': 'O endereço pode ser inválido, verifique se o servidor está iniciado ou se a conexão de rede está correta; Também pode ser impossível enviar solicitações devido a problemas com o protocolo HTTPS',
   'message.languageChanged': 'Idioma alterado',

@@ -450,6 +450,7 @@ export default {
   'message.unbindSuccess': 'Hủy liên kết thành công',
   'message.unbindFail': 'Hủy liên kết thất bại',
   'message.networkError': 'Lỗi mạng, vui lòng kiểm tra kết nối',
+  'message.httpStatusError': 'Yêu cầu thất bại ({status}), vui lòng kiểm tra kết nối hoặc liên hệ quản trị viên',
   'message.serverError': 'Lỗi máy chủ, vui lòng thử lại sau',
   'message.invalidAddress': 'Địa chỉ có thể không hợp lệ. Vui lòng kiểm tra xem máy chủ đã khởi động hay kết nối mạng chưa; Có thể không gửi được yêu cầu do lỗi giao thức HTTPS',
   'message.languageChanged': 'Đã thay đổi ngôn ngữ',

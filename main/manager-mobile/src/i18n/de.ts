@@ -450,6 +450,7 @@ export default {
   'message.unbindSuccess': 'Entbinden erfolgreich',
   'message.unbindFail': 'Entbinden fehlgeschlagen',
   'message.networkError': 'Netzwerkfehler, bitte Verbindung prüfen',
+  'message.httpStatusError': 'Anfrage fehlgeschlagen ({status}), bitte Verbindung prüfen oder Administrator kontaktieren',
   'message.serverError': 'Serverfehler, bitte später erneut versuchen',
   'message.invalidAddress': 'Die Adresse kann ungültig sein. Bitte überprüfen Sie, ob der Server gestartet ist oder ob die Netzwerkverbindung funktioniert. Es kann auch sein, dass die Anfrage aufgrund eines Problems mit dem HTTPS-Protokoll nicht gesendet werden kann.',
   'message.languageChanged': 'Sprache geändert',

@@ -5,8 +5,7 @@ import AdapterUniapp from '@alova/adapter-uniapp'
 import { createAlova } from 'alova'
 import { createServerTokenAuthentication } from 'alova/client'
 import VueHook from 'alova/vue'
-import { t } from '@/i18n'
-import { getSystemLanguage, resolveLanguage } from '@/i18n/locale'
+import { getCurrentLanguage, t } from '@/i18n'
 import { getEnvBaseUrl } from '@/utils'
 import { toast } from '@/utils/toast'
 import { ContentTypeEnum, ResultEnum, ShowMessage } from './enum'
@@ -64,14 +63,12 @@ const alovaInstance = createAlova({
     // 检查混合内容错误（HTTPS页面请求HTTP接口）
     const currentProtocol = typeof window !== 'undefined' && window.location.protocol
     const requestProtocol = method.baseURL?.split(':')[0]
-    const storedLang = uni.getStorageSync('app_language')
-    const locale = resolveLanguage(storedLang, getSystemLanguage())
-    const currentLang = langMap[locale]
+    const currentLang = langMap[getCurrentLanguage()]
     if (currentProtocol === 'https:' && requestProtocol === 'http') {
       throw new Error(t('message.invalidAddress'))
     }
 
-    // 设置默认 Content-Type
+    // Request headers follow the same runtime locale used by the UI.
     method.config.headers = {
       'Content-Type': ContentTypeEnum.JSON,
       'Accept': 'application/json, text/plain, */*',
@@ -120,7 +117,7 @@ const alovaInstance = createAlova({
 
     // 处理 HTTP 状态码错误
     if (statusCode !== 200) {
-      const errorMessage = ShowMessage(statusCode) || `HTTP请求错误[${statusCode}]`
+      const errorMessage = ShowMessage(statusCode, t) || t('message.httpStatusError', { status: statusCode })
       console.error('errorMessage===>', errorMessage)
       toast.error(errorMessage)
       throw new Error(`${errorMessage}：${errMsg}`)
